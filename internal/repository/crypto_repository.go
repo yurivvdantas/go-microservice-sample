@@ -6,6 +6,7 @@ import (
 )
 
 func FindCryptoById(id int64) ([]model.Cryptos, error) {
+	//TODO search if there is a problema open connection all the time
 	conn, _ := InitConnection()
 	//TODO handle when has connetion error with DB
 	// An albums slice to hold data from returned rows.

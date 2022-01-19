@@ -2,6 +2,7 @@ package usecases
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -38,9 +39,12 @@ func GetCryptoByID(ctxRequest *gin.Context) {
 	}
 	log.Printf("Result: %s", r.Name)
 
-	ctxRequest.IndentedJSON(http.StatusOK, r)
-
 	cryptos, _ := repository.FindCryptoById(id)
 
-	fmt.Println(cryptos)
+	a, err := json.Marshal(cryptos)
+	if err != nil {
+		panic(err)
+	}
+	ctxRequest.Data(http.StatusOK, gin.MIMEJSON, a)
+	fmt.Println(string(a))
 }
