@@ -1,20 +1,17 @@
 package repository
 
 import (
-	"database/sql"
 	"fmt"
 	"go-microservice-sample/internal/model"
 )
 
-type CrypotRepository struct {
-	db *sql.DB
-}
-
-func (cr *CrypotRepository) FindById(id int64) ([]model.Cryptos, error) {
+func FindCryptoById(id int64) ([]model.Cryptos, error) {
+	conn, _ := InitConnection()
+	//TODO handle when has connetion error with DB
 	// An albums slice to hold data from returned rows.
 	var cryptos []model.Cryptos
 
-	rows, err := cr.db.Query("SELECT * FROM CRYPTOS WHERE id = ?", id)
+	rows, err := conn.Query("SELECT * FROM CRYPTOS WHERE id = ?", id)
 	if err != nil {
 		return nil, fmt.Errorf("cryptoById %q: %v", id, err)
 	}

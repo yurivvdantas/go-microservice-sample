@@ -1,4 +1,4 @@
-package infrastructure
+package repository
 
 import (
 	"database/sql"
@@ -21,18 +21,18 @@ func InitConnection() (*sql.DB, error) {
 
 	// Get a database handle.
 	var err error
-	db, err := sql.Open("mysql", cfg.FormatDSN())
+	conn, err := sql.Open("mysql", cfg.FormatDSN())
 	if err != nil {
 		log.Fatal(err)
 		return nil, err
 	}
 
-	pingErr := db.Ping()
+	pingErr := conn.Ping()
 	if pingErr != nil {
 		log.Fatal(pingErr)
 		return nil, pingErr
 	}
 	fmt.Println("Connected!")
 
-	return db, nil
+	return conn, nil
 }
