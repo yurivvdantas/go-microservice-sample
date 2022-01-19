@@ -1,7 +1,8 @@
-package main
+package usecases
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"log"
 	"net/http"
@@ -9,44 +10,24 @@ import (
 	"time"
 
 	pb "go-microservice-sample/api"
+	"go-microservice-sample/configs"
+	"go-microservice-sample/internal/model"
+	"go-microservice-sample/internal/repository"
 
 	"github.com/gin-gonic/gin"
 	"google.golang.org/grpc"
-
-	"database/sql"
-
-	"github.com/go-sql-driver/mysql"
 )
 
 var db *sql.DB
 
-const (
-	address     = "localhost:50051"
-	defaultName = "world"
-)
-
-type Cryptos struct {
-	Id          int64
-	Name        string
-	Code        string
-	Upvote      int64
-	Downvote    int64
-	Description string
-}
-
-func main() {
-	router := gin.Default()
-	router.GET("/users/:id", getUserByID)
-	router.Run("localhost:8080")
-}
-
-func getUserByID(ctxRequest *gin.Context) {
+func GetCryptoByID(ctxRequest *gin.Context) {
 	id, err := strconv.ParseInt(ctxRequest.Param("id"), 10, 64)
 	if err != nil {
 		log.Fatalf("The id must be a int: %v", err)
 	}
 	// Set up a connection to the server.
-	conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithBlock())
+	conn, err := grpc.Dial(configs.Microservice1Adress,
+		grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
 		log.Fatalf("did not connect: %v", err)
 	}
@@ -63,44 +44,14 @@ func getUserByID(ctxRequest *gin.Context) {
 
 	ctxRequest.IndentedJSON(http.StatusOK, r)
 
-	initConnectionWithDatabase()
+	cryptoById(id)
 
-}
-
-func initConnectionWithDatabase() {
-	cfg := mysql.Config{
-		User:                 "admin", //os.Getenv("DBUSER"),
-		Passwd:               "admin", //os.Getenv("DBPASS"),
-		Net:                  "tcp",
-		Addr:                 "172.17.0.2:3306",
-		DBName:               "cryptos",
-		AllowNativePasswords: true,
-	}
-
-	// Get a database handle.
-	var err error
-	db, err = sql.Open("mysql", cfg.FormatDSN())
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	pingErr := db.Ping()
-	if pingErr != nil {
-		log.Fatal(pingErr)
-	}
-	fmt.Println("Connected!")
-
-	cryptos, err := cryptoById(1)
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Printf("Cryptos found: %v\n", cryptos)
 }
 
 // cryptoById queries for albums that have the specified artist name.
-func cryptoById(id int64) ([]Cryptos, error) {
+func cryptoById(id int64) ([]model.Cryptos, error) {
 	// An albums slice to hold data from returned rows.
-	var cryptos []Cryptos
+	var cryptos []model.Cryptos
 
 	rows, err := db.Query("SELECT * FROM CRYPTOS WHERE id = ?", id)
 	if err != nil {
@@ -109,7 +60,7 @@ func cryptoById(id int64) ([]Cryptos, error) {
 	defer rows.Close()
 	// Loop through rows, using Scan to assign column data to struct fields.
 	for rows.Next() {
-		var cry Cryptos
+		var cry model.Cryptos
 		if err := rows.Scan(&cry.Id, &cry.Name, &cry.Code, &cry.Upvote, &cry.Downvote, &cry.Description); err != nil {
 			return nil, fmt.Errorf("cryptoById %q: %v", id, err)
 		}
