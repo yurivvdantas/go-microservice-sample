@@ -1,7 +1,7 @@
 package infrastructure
 
 import (
-	"go-microservice-sample/internal/usecases"
+	"go-microservice-sample/internal/gateway/usecases"
 
 	"github.com/gin-gonic/gin"
 )

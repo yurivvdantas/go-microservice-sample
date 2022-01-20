@@ -2,8 +2,6 @@ package usecases
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -11,7 +9,6 @@ import (
 
 	pb "go-microservice-sample/api"
 	"go-microservice-sample/configs"
-	"go-microservice-sample/internal/repository"
 
 	"github.com/gin-gonic/gin"
 	"google.golang.org/grpc"
@@ -23,7 +20,7 @@ func GetCryptoByID(ctxRequest *gin.Context) {
 		log.Fatalf("The id must be a int: %v", err)
 	}
 	// Set up a connection to the server.
-	conn, err := grpc.Dial(configs.Microservice1Adress,
+	conn, err := grpc.Dial(configs.Crypto_votes_service_adress,
 		grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
 		log.Fatalf("did not connect: %v", err)
@@ -39,12 +36,5 @@ func GetCryptoByID(ctxRequest *gin.Context) {
 	}
 	log.Printf("Result: %s", r.Name)
 
-	cryptos, _ := repository.FindCryptoById(id)
-
-	a, err := json.Marshal(cryptos)
-	if err != nil {
-		panic(err)
-	}
-	ctxRequest.Data(http.StatusOK, gin.MIMEJSON, a)
-	fmt.Println(string(a))
+	ctxRequest.IndentedJSON(http.StatusOK, r)
 }

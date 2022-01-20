@@ -2,7 +2,7 @@ package repository
 
 import (
 	"fmt"
-	"go-microservice-sample/internal/model"
+	"go-microservice-sample/internal/crypto-votes-service/model"
 )
 
 func FindCryptoById(id int64) ([]model.Cryptos, error) {
