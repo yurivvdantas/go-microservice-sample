@@ -9,6 +9,7 @@ import (
 
 	pb "go-microservice-sample/api"
 	"go-microservice-sample/configs"
+	"go-microservice-sample/internal/gateway/model"
 
 	"github.com/gin-gonic/gin"
 	"google.golang.org/grpc"
@@ -26,13 +27,15 @@ func GetCryptoByID(ctxRequest *gin.Context) {
 		log.Fatalf("did not connect: %v", err)
 	}
 	defer conn.Close()
-	c := pb.NewUsersClient(conn)
+	c := pb.NewCryptosClient(conn)
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	r, err := c.Get(ctx, &pb.UserId{Id: id})
+	r, err := c.Get(ctx, &pb.CryptoId{Id: id})
 	if err != nil {
-		log.Fatalf("something get wrong on get user: %v", err)
+		log.Printf("something get wrong on get user: %v", err)
+		ctxRequest.IndentedJSON(http.StatusBadRequest,
+			model.HTTPError{Cause: err.Error(), Detail: "something get wrong on get user", Status: 400})
 	}
 	log.Printf("Result: %s", r.Name)
 

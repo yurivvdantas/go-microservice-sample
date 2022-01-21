@@ -2,24 +2,30 @@ package usecases
 
 import (
 	"context"
-	"fmt"
 	"log"
 
 	pb "go-microservice-sample/api"
 	"go-microservice-sample/internal/crypto-votes-service/repository"
 )
 
-// server is used to implement helloworld.GreeterServer.
+// server is used to implement CryptoServer.GreeterServer.
 type CryptoServer struct {
-	pb.UnimplementedUsersServer
+	pb.UnimplementedCryptosServer
 }
 
-// SayHello implements helloworld.GreeterServer
-func (s *CryptoServer) Get(ctx context.Context, in *pb.UserId) (*pb.User, error) {
+// Get crypto by given id
+func (s *CryptoServer) Get(ctx context.Context, in *pb.CryptoId) (*pb.Crypto, error) {
 	log.Printf("Received userId: %v", in.Id)
 
-	cryptos, _ := repository.FindCryptoById(in.Id)
-	fmt.Println(cryptos)
+	cryptos, err := repository.FindCryptoById(in.Id)
+	if err != nil {
+		return nil, err
+	}
 
-	return &pb.User{Id: in.Id, Name: "New user"}, nil
+	return &pb.Crypto{Id: cryptos.Id,
+		Name:        cryptos.Name,
+		Code:        cryptos.Code,
+		Upvote:      cryptos.Upvote,
+		Downvote:    cryptos.Downvote,
+		Description: cryptos.Description}, nil
 }

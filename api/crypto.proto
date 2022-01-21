@@ -16,23 +16,27 @@ syntax = "proto3";
 
 option go_package = "go-microservice-sample/api";
 option java_multiple_files = true;
-option java_package = "io.grpc.examples.helloworld";
-option java_outer_classname = "HelloWorldProto";
+option java_package = "io.grpc.examples.crypto";
+option java_outer_classname = "CryptoProto";
 
-package helloworld;
+package Crypto;
 
-// The greeting service definition.
-service Users {
-  // Sends a greeting
-  rpc Get (UserId) returns (User) {}
+// The crypto service definition.
+service Cryptos {
+  // Geeting a crypto by id
+  rpc Get (CryptoId) returns (Crypto) {}
 }
 
-// The request message containing the user's name.
-message User {
+// The request message containing the data of crypto.
+message Crypto {
   int64 id = 1;
   string name = 2;
+  string code = 3;
+  int64 upvote = 4;
+  int64 downvote = 5;
+  string description = 6;
 }
 
-message UserId {
+message CryptoId {
   int64 id = 1;
 }

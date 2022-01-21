@@ -1,33 +1,47 @@
 package repository
 
 import (
+	"database/sql"
 	"fmt"
 	"go-microservice-sample/internal/crypto-votes-service/model"
 )
 
-func FindCryptoById(id int64) ([]model.Cryptos, error) {
-	//TODO search if there is a problema open connection all the time
+func FindAllCrypto() ([]model.Cryptos, error) {
 	conn, _ := InitConnection()
-	//TODO handle when has connetion error with DB
-	// An albums slice to hold data from returned rows.
 	var cryptos []model.Cryptos
 
-	rows, err := conn.Query("SELECT * FROM CRYPTOS WHERE id = ?", id)
+	rows, err := conn.Query("SELECT * FROM CRYPTOS")
 	if err != nil {
-		return nil, fmt.Errorf("cryptoById %q: %v", id, err)
+		return nil, fmt.Errorf("cryptoFindAll : %v", err)
 	}
 	defer rows.Close()
 	// Loop through rows, using Scan to assign column data to struct fields.
 	for rows.Next() {
 		var cry model.Cryptos
 		if err := rows.Scan(&cry.Id, &cry.Name, &cry.Code, &cry.Upvote, &cry.Downvote, &cry.Description); err != nil {
-			return nil, fmt.Errorf("cryptoById %q: %v", id, err)
+			return nil, fmt.Errorf("cryptoFindAll : %v", err)
 		}
 		cryptos = append(cryptos, cry)
 	}
 	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("albumsByArtist %q: %v", id, err)
+		return nil, fmt.Errorf("cryptoFindAll : %v", err)
 	}
 
 	return cryptos, nil
+}
+
+func FindCryptoById(id int64) (*model.Cryptos, error) {
+	conn, _ := InitConnection()
+	var cryp model.Cryptos
+
+	row := conn.QueryRow("SELECT * FROM CRYPTOS WHERE id = ?", id)
+
+	if err := row.Scan(&cryp.Id, &cryp.Name, &cryp.Code, &cryp.Upvote, &cryp.Downvote, &cryp.Description); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, fmt.Errorf("crypto %d: not found", id)
+		}
+		return nil, fmt.Errorf("cryptoById %d: %v", id, err)
+	}
+
+	return &cryp, nil
 }
