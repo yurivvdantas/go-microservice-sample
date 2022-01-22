@@ -67,3 +67,16 @@ func (s *CryptoServer) AddCrypto(ctx context.Context, in *pb.Crypto) (*pb.Crypto
 
 	return &pb.CryptoId{Id: id}, nil
 }
+
+// Increse by one a upvote to a crypt
+func (s *CryptoServer) Upvote(ctx context.Context, in *pb.CryptoId) (*empty.Empty, error) {
+	log.Printf("Received crypto id: %v", in)
+
+	crypto, err := repository.FindCryptoById(in.Id)
+	if err != nil {
+		return nil, err
+	}
+	crypto.Upvote += 1
+
+	return &empty.Empty{}, repository.UpdateCrypto(crypto)
+}

@@ -58,3 +58,12 @@ func AddCrypto(cry model.Cryptos) (int64, error) {
 	}
 	return id, nil
 }
+
+func UpdateCrypto(cry *model.Cryptos) error {
+	conn, _ := InitConnection()
+	_, err := conn.Exec("UPDATE CRYPTOS set upvotes = ?, downvotes = ? where id = ?", cry.Upvote, cry.Downvote, cry.Id)
+	if err != nil {
+		return fmt.Errorf("UpdateCrypto: %v", err)
+	}
+	return nil
+}

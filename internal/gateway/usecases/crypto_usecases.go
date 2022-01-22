@@ -98,6 +98,28 @@ func AddCrypto(ctxRequest *gin.Context) {
 	ctxRequest.IndentedJSON(http.StatusOK, r)
 }
 
+func UpvoteCrypto(ctxRequest *gin.Context) {
+	id, err := strconv.ParseInt(ctxRequest.Param("id"), 10, 64)
+	if err != nil {
+		log.Fatalf("The id must be a int: %v", err)
+	}
+	grpcClient, conn := getCryptoClientGrpc()
+	defer conn.Close()
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	_, err = grpcClient.Upvote(ctx, &pb.CryptoId{Id: id})
+	if err != nil {
+		log.Printf("something get wrong on upvote: %v", err)
+		ctxRequest.IndentedJSON(http.StatusBadRequest,
+			model.HTTPError{Cause: err.Error(), Detail: "something get wrong on upvote", Status: 400})
+		return
+	}
+	log.Printf("Upvote finish")
+
+	ctxRequest.IndentedJSON(http.StatusNoContent, nil)
+}
+
 // Set up a connection to the server.
 func getCryptoClientGrpc() (pb.CryptosClient, *grpc.ClientConn) {
 	conn, err := grpc.Dial(configs.Crypto_votes_service_address,

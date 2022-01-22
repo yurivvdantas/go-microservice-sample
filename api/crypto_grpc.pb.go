@@ -19,10 +19,11 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type CryptosClient interface {
-	// Geeting a crypto by id
 	Get(ctx context.Context, in *CryptoId, opts ...grpc.CallOption) (*Crypto, error)
 	GetAll(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (Cryptos_GetAllClient, error)
 	AddCrypto(ctx context.Context, in *Crypto, opts ...grpc.CallOption) (*CryptoId, error)
+	Upvote(ctx context.Context, in *CryptoId, opts ...grpc.CallOption) (*empty.Empty, error)
+	Downvote(ctx context.Context, in *CryptoId, opts ...grpc.CallOption) (*empty.Empty, error)
 }
 
 type cryptosClient struct {
@@ -83,14 +84,33 @@ func (c *cryptosClient) AddCrypto(ctx context.Context, in *Crypto, opts ...grpc.
 	return out, nil
 }
 
+func (c *cryptosClient) Upvote(ctx context.Context, in *CryptoId, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out := new(empty.Empty)
+	err := c.cc.Invoke(ctx, "/Crypto.Cryptos/Upvote", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *cryptosClient) Downvote(ctx context.Context, in *CryptoId, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out := new(empty.Empty)
+	err := c.cc.Invoke(ctx, "/Crypto.Cryptos/Downvote", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // CryptosServer is the server API for Cryptos service.
 // All implementations must embed UnimplementedCryptosServer
 // for forward compatibility
 type CryptosServer interface {
-	// Geeting a crypto by id
 	Get(context.Context, *CryptoId) (*Crypto, error)
 	GetAll(*empty.Empty, Cryptos_GetAllServer) error
 	AddCrypto(context.Context, *Crypto) (*CryptoId, error)
+	Upvote(context.Context, *CryptoId) (*empty.Empty, error)
+	Downvote(context.Context, *CryptoId) (*empty.Empty, error)
 	mustEmbedUnimplementedCryptosServer()
 }
 
@@ -106,6 +126,12 @@ func (UnimplementedCryptosServer) GetAll(*empty.Empty, Cryptos_GetAllServer) err
 }
 func (UnimplementedCryptosServer) AddCrypto(context.Context, *Crypto) (*CryptoId, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AddCrypto not implemented")
+}
+func (UnimplementedCryptosServer) Upvote(context.Context, *CryptoId) (*empty.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Upvote not implemented")
+}
+func (UnimplementedCryptosServer) Downvote(context.Context, *CryptoId) (*empty.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Downvote not implemented")
 }
 func (UnimplementedCryptosServer) mustEmbedUnimplementedCryptosServer() {}
 
@@ -177,6 +203,42 @@ func _Cryptos_AddCrypto_Handler(srv interface{}, ctx context.Context, dec func(i
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Cryptos_Upvote_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CryptoId)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CryptosServer).Upvote(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/Crypto.Cryptos/Upvote",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CryptosServer).Upvote(ctx, req.(*CryptoId))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Cryptos_Downvote_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CryptoId)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CryptosServer).Downvote(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/Crypto.Cryptos/Downvote",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CryptosServer).Downvote(ctx, req.(*CryptoId))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Cryptos_ServiceDesc is the grpc.ServiceDesc for Cryptos service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -191,6 +253,14 @@ var Cryptos_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "AddCrypto",
 			Handler:    _Cryptos_AddCrypto_Handler,
+		},
+		{
+			MethodName: "Upvote",
+			Handler:    _Cryptos_Upvote_Handler,
+		},
+		{
+			MethodName: "Downvote",
+			Handler:    _Cryptos_Downvote_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{
