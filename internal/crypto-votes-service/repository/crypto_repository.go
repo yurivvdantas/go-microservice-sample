@@ -67,3 +67,19 @@ func UpdateCrypto(cry *model.Cryptos) error {
 	}
 	return nil
 }
+
+func FindUpVotesCryptoById(id int64) (int64, error) {
+	conn, _ := InitConnection()
+	var upvotes int64
+
+	row := conn.QueryRow("SELECT upvotes FROM CRYPTOS WHERE id = ?", id)
+
+	if err := row.Scan(&upvotes); err != nil {
+		if err == sql.ErrNoRows {
+			return -1, fmt.Errorf("crypto %d: not found", id)
+		}
+		return -1, fmt.Errorf("cryptoById %d: %v", id, err)
+	}
+
+	return upvotes, nil
+}

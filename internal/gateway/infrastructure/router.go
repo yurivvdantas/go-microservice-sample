@@ -12,5 +12,6 @@ func Dispatch() {
 	router.GET("/crypto/", usecases.GetAllCrypto)
 	router.POST("/crypto/", usecases.AddCrypto)
 	router.POST("/crypto/:id/upvote", usecases.UpvoteCrypto)
+	router.GET("/crypto/:id/upvote", usecases.GetUpvotes)
 	router.Run("localhost:8080")
 }

@@ -24,6 +24,7 @@ type CryptosClient interface {
 	AddCrypto(ctx context.Context, in *Crypto, opts ...grpc.CallOption) (*CryptoId, error)
 	Upvote(ctx context.Context, in *CryptoId, opts ...grpc.CallOption) (*empty.Empty, error)
 	Downvote(ctx context.Context, in *CryptoId, opts ...grpc.CallOption) (*empty.Empty, error)
+	LiveUpVotes(ctx context.Context, in *CryptoId, opts ...grpc.CallOption) (Cryptos_LiveUpVotesClient, error)
 }
 
 type cryptosClient struct {
@@ -102,6 +103,38 @@ func (c *cryptosClient) Downvote(ctx context.Context, in *CryptoId, opts ...grpc
 	return out, nil
 }
 
+func (c *cryptosClient) LiveUpVotes(ctx context.Context, in *CryptoId, opts ...grpc.CallOption) (Cryptos_LiveUpVotesClient, error) {
+	stream, err := c.cc.NewStream(ctx, &Cryptos_ServiceDesc.Streams[1], "/Crypto.Cryptos/LiveUpVotes", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &cryptosLiveUpVotesClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type Cryptos_LiveUpVotesClient interface {
+	Recv() (*Upvotes, error)
+	grpc.ClientStream
+}
+
+type cryptosLiveUpVotesClient struct {
+	grpc.ClientStream
+}
+
+func (x *cryptosLiveUpVotesClient) Recv() (*Upvotes, error) {
+	m := new(Upvotes)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // CryptosServer is the server API for Cryptos service.
 // All implementations must embed UnimplementedCryptosServer
 // for forward compatibility
@@ -111,6 +144,7 @@ type CryptosServer interface {
 	AddCrypto(context.Context, *Crypto) (*CryptoId, error)
 	Upvote(context.Context, *CryptoId) (*empty.Empty, error)
 	Downvote(context.Context, *CryptoId) (*empty.Empty, error)
+	LiveUpVotes(*CryptoId, Cryptos_LiveUpVotesServer) error
 	mustEmbedUnimplementedCryptosServer()
 }
 
@@ -132,6 +166,9 @@ func (UnimplementedCryptosServer) Upvote(context.Context, *CryptoId) (*empty.Emp
 }
 func (UnimplementedCryptosServer) Downvote(context.Context, *CryptoId) (*empty.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Downvote not implemented")
+}
+func (UnimplementedCryptosServer) LiveUpVotes(*CryptoId, Cryptos_LiveUpVotesServer) error {
+	return status.Errorf(codes.Unimplemented, "method LiveUpVotes not implemented")
 }
 func (UnimplementedCryptosServer) mustEmbedUnimplementedCryptosServer() {}
 
@@ -239,6 +276,27 @@ func _Cryptos_Downvote_Handler(srv interface{}, ctx context.Context, dec func(in
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Cryptos_LiveUpVotes_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(CryptoId)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(CryptosServer).LiveUpVotes(m, &cryptosLiveUpVotesServer{stream})
+}
+
+type Cryptos_LiveUpVotesServer interface {
+	Send(*Upvotes) error
+	grpc.ServerStream
+}
+
+type cryptosLiveUpVotesServer struct {
+	grpc.ServerStream
+}
+
+func (x *cryptosLiveUpVotesServer) Send(m *Upvotes) error {
+	return x.ServerStream.SendMsg(m)
+}
+
 // Cryptos_ServiceDesc is the grpc.ServiceDesc for Cryptos service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -267,6 +325,11 @@ var Cryptos_ServiceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "GetAll",
 			Handler:       _Cryptos_GetAll_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "LiveUpVotes",
+			Handler:       _Cryptos_LiveUpVotes_Handler,
 			ServerStreams: true,
 		},
 	},

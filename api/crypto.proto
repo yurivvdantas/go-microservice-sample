@@ -16,6 +16,7 @@ service Cryptos {
   rpc AddCrypto (Crypto) returns (CryptoId) {}
   rpc Upvote (CryptoId) returns (google.protobuf.Empty) {}
   rpc Downvote (CryptoId) returns (google.protobuf.Empty) {}
+  rpc LiveUpVotes (CryptoId) returns (stream Upvotes) {}
 }
 
 // The request message containing the data of crypto.
@@ -30,4 +31,8 @@ message Crypto {
 
 message CryptoId {
   int64 id = 1;
+}
+
+message Upvotes {
+  int64 total = 1;
 }

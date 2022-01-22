@@ -3,6 +3,7 @@ package usecases
 import (
 	"context"
 	"log"
+	"time"
 
 	pb "go-microservice-sample/api"
 	"go-microservice-sample/internal/crypto-votes-service/model"
@@ -79,4 +80,23 @@ func (s *CryptoServer) Upvote(ctx context.Context, in *pb.CryptoId) (*empty.Empt
 	crypto.Upvote += 1
 
 	return &empty.Empty{}, repository.UpdateCrypto(crypto)
+}
+
+// Stream upvotes of a crypto
+func (s *CryptoServer) LiveUpVotes(in *pb.CryptoId, srv pb.Cryptos_LiveUpVotesServer) error {
+	log.Printf("Initialize a stream of upvotes...")
+
+	for {
+		time.Sleep(time.Second)
+		upvotes, err := repository.FindUpVotesCryptoById(in.Id)
+		if err != nil {
+			return err
+		}
+
+		if err := srv.Send(&pb.Upvotes{Total: upvotes}); err != nil {
+			log.Printf("send error %v", err)
+			return err
+		}
+		log.Printf("sending data: %v", upvotes)
+	}
 }

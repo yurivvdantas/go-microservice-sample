@@ -18,10 +18,7 @@ import (
 )
 
 func GetCryptoByID(ctxRequest *gin.Context) {
-	id, err := strconv.ParseInt(ctxRequest.Param("id"), 10, 64)
-	if err != nil {
-		log.Fatalf("The id must be a int: %v", err)
-	}
+	id := getIdFromPathContext(ctxRequest)
 	grpcClient, conn := getCryptoClientGrpc()
 	defer conn.Close()
 
@@ -99,16 +96,13 @@ func AddCrypto(ctxRequest *gin.Context) {
 }
 
 func UpvoteCrypto(ctxRequest *gin.Context) {
-	id, err := strconv.ParseInt(ctxRequest.Param("id"), 10, 64)
-	if err != nil {
-		log.Fatalf("The id must be a int: %v", err)
-	}
+	id := getIdFromPathContext(ctxRequest)
 	grpcClient, conn := getCryptoClientGrpc()
 	defer conn.Close()
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	_, err = grpcClient.Upvote(ctx, &pb.CryptoId{Id: id})
+	_, err := grpcClient.Upvote(ctx, &pb.CryptoId{Id: id})
 	if err != nil {
 		log.Printf("something get wrong on upvote: %v", err)
 		ctxRequest.IndentedJSON(http.StatusBadRequest,
@@ -118,6 +112,39 @@ func UpvoteCrypto(ctxRequest *gin.Context) {
 	log.Printf("Upvote finish")
 
 	ctxRequest.IndentedJSON(http.StatusNoContent, nil)
+}
+
+func GetUpvotes(ctxRequest *gin.Context) {
+	id := getIdFromPathContext(ctxRequest)
+	grpcClient, conn := getCryptoClientGrpc()
+	defer conn.Close()
+
+	stream, err := grpcClient.LiveUpVotes(context.Background(), &pb.CryptoId{Id: id})
+	if err != nil {
+		log.Fatalf("open stream error %v", err)
+	}
+
+	var totalUpvotes *pb.Upvotes
+	for i := 0; i < 10; i++ {
+		totalUpvotes, err = stream.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			log.Fatalf("cannot receive %v", err)
+		}
+
+		log.Printf("Total upvotes: %s", totalUpvotes)
+	}
+	ctxRequest.IndentedJSON(http.StatusOK, totalUpvotes)
+}
+
+func getIdFromPathContext(ctxRequest *gin.Context) int64 {
+	id, err := strconv.ParseInt(ctxRequest.Param("id"), 10, 64)
+	if err != nil {
+		log.Fatalf("The id must be a int: %v", err)
+	}
+	return id
 }
 
 // Set up a connection to the server.
