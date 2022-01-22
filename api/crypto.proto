@@ -21,10 +21,15 @@ option java_outer_classname = "CryptoProto";
 
 package Crypto;
 
+import "google/protobuf/empty.proto";
+
 // The crypto service definition.
 service Cryptos {
   // Geeting a crypto by id
   rpc Get (CryptoId) returns (Crypto) {}
+  rpc GetAll (google.protobuf.Empty) returns (stream Crypto) {}
+//  rpc SetUpvote (CryptoId) returns (stream Crypto) {}
+//  rpc SetDownvote (CryptoId) returns (stream Crypto) {}
 }
 
 // The request message containing the data of crypto.

@@ -4,6 +4,7 @@ package api
 
 import (
 	context "context"
+	empty "github.com/golang/protobuf/ptypes/empty"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -20,6 +21,7 @@ const _ = grpc.SupportPackageIsVersion7
 type CryptosClient interface {
 	// Geeting a crypto by id
 	Get(ctx context.Context, in *CryptoId, opts ...grpc.CallOption) (*Crypto, error)
+	GetAll(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (Cryptos_GetAllClient, error)
 }
 
 type cryptosClient struct {
@@ -39,12 +41,45 @@ func (c *cryptosClient) Get(ctx context.Context, in *CryptoId, opts ...grpc.Call
 	return out, nil
 }
 
+func (c *cryptosClient) GetAll(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (Cryptos_GetAllClient, error) {
+	stream, err := c.cc.NewStream(ctx, &Cryptos_ServiceDesc.Streams[0], "/Crypto.Cryptos/GetAll", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &cryptosGetAllClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type Cryptos_GetAllClient interface {
+	Recv() (*Crypto, error)
+	grpc.ClientStream
+}
+
+type cryptosGetAllClient struct {
+	grpc.ClientStream
+}
+
+func (x *cryptosGetAllClient) Recv() (*Crypto, error) {
+	m := new(Crypto)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // CryptosServer is the server API for Cryptos service.
 // All implementations must embed UnimplementedCryptosServer
 // for forward compatibility
 type CryptosServer interface {
 	// Geeting a crypto by id
 	Get(context.Context, *CryptoId) (*Crypto, error)
+	GetAll(*empty.Empty, Cryptos_GetAllServer) error
 	mustEmbedUnimplementedCryptosServer()
 }
 
@@ -54,6 +89,9 @@ type UnimplementedCryptosServer struct {
 
 func (UnimplementedCryptosServer) Get(context.Context, *CryptoId) (*Crypto, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Get not implemented")
+}
+func (UnimplementedCryptosServer) GetAll(*empty.Empty, Cryptos_GetAllServer) error {
+	return status.Errorf(codes.Unimplemented, "method GetAll not implemented")
 }
 func (UnimplementedCryptosServer) mustEmbedUnimplementedCryptosServer() {}
 
@@ -86,6 +124,27 @@ func _Cryptos_Get_Handler(srv interface{}, ctx context.Context, dec func(interfa
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Cryptos_GetAll_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(empty.Empty)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(CryptosServer).GetAll(m, &cryptosGetAllServer{stream})
+}
+
+type Cryptos_GetAllServer interface {
+	Send(*Crypto) error
+	grpc.ServerStream
+}
+
+type cryptosGetAllServer struct {
+	grpc.ServerStream
+}
+
+func (x *cryptosGetAllServer) Send(m *Crypto) error {
+	return x.ServerStream.SendMsg(m)
+}
+
 // Cryptos_ServiceDesc is the grpc.ServiceDesc for Cryptos service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -98,6 +157,12 @@ var Cryptos_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Cryptos_Get_Handler,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "GetAll",
+			Handler:       _Cryptos_GetAll_Handler,
+			ServerStreams: true,
+		},
+	},
 	Metadata: "api/crypto.proto",
 }
