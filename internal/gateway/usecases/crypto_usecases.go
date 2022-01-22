@@ -68,9 +68,39 @@ func GetAllCrypto(ctxRequest *gin.Context) {
 	ctxRequest.IndentedJSON(http.StatusOK, cryptos)
 }
 
+func AddCrypto(ctxRequest *gin.Context) {
+	var newCrypto model.Crypto_request
+
+	if err := ctxRequest.BindJSON(&newCrypto); err != nil {
+		ctxRequest.IndentedJSON(http.StatusBadRequest,
+			model.HTTPError{Cause: err.Error(), Detail: "it's not a valid crypto", Status: 400})
+		return
+	}
+
+	grpcClient, conn := getCryptoClientGrpc()
+	defer conn.Close()
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+
+	r, err := grpcClient.AddCrypto(ctx, &pb.Crypto{
+		Name:        newCrypto.Name,
+		Code:        newCrypto.Code,
+		Description: newCrypto.Description})
+	if err != nil {
+		log.Printf("something get wrong on add user: %v", err)
+		ctxRequest.IndentedJSON(http.StatusBadRequest,
+			model.HTTPError{Cause: err.Error(), Detail: "something get wrong on add user", Status: 500})
+		return
+	}
+	log.Printf("The crypto was inserted and the id is: %d", r.Id)
+
+	ctxRequest.IndentedJSON(http.StatusOK, r)
+}
+
 // Set up a connection to the server.
 func getCryptoClientGrpc() (pb.CryptosClient, *grpc.ClientConn) {
-	conn, err := grpc.Dial(configs.Crypto_votes_service_adress,
+	conn, err := grpc.Dial(configs.Crypto_votes_service_address,
 		grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
 		log.Fatalf("did not connect: %v", err)

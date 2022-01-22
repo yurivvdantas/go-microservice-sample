@@ -8,7 +8,8 @@ import (
 
 func Dispatch() {
 	router := gin.Default()
-	router.GET("/users/:id", usecases.GetCryptoByID)
-	router.GET("/users/", usecases.GetAllCrypto)
+	router.GET("/crypto/:id", usecases.GetCryptoByID)
+	router.GET("/crypto/", usecases.GetAllCrypto)
+	router.POST("/crypto/", usecases.AddCrypto)
 	router.Run("localhost:8080")
 }

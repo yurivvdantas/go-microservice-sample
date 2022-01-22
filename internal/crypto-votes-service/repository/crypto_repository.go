@@ -45,3 +45,16 @@ func FindCryptoById(id int64) (*model.Cryptos, error) {
 
 	return &cryp, nil
 }
+
+func AddCrypto(cry model.Cryptos) (int64, error) {
+	conn, _ := InitConnection()
+	result, err := conn.Exec("INSERT INTO CRYPTOS (name, code,upvotes,downvotes,description) VALUES (?, ?, ?,?,?)", cry.Name, cry.Code, 0, 0, cry.Description)
+	if err != nil {
+		return 0, fmt.Errorf("addCrypto: %v", err)
+	}
+	id, err := result.LastInsertId()
+	if err != nil {
+		return 0, fmt.Errorf("addCrypto: %v", err)
+	}
+	return id, nil
+}

@@ -28,6 +28,7 @@ service Cryptos {
   // Geeting a crypto by id
   rpc Get (CryptoId) returns (Crypto) {}
   rpc GetAll (google.protobuf.Empty) returns (stream Crypto) {}
+  rpc AddCrypto (Crypto) returns (CryptoId) {}
 //  rpc SetUpvote (CryptoId) returns (stream Crypto) {}
 //  rpc SetDownvote (CryptoId) returns (stream Crypto) {}
 }

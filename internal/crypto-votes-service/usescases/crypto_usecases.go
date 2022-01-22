@@ -5,6 +5,7 @@ import (
 	"log"
 
 	pb "go-microservice-sample/api"
+	"go-microservice-sample/internal/crypto-votes-service/model"
 	"go-microservice-sample/internal/crypto-votes-service/repository"
 
 	"github.com/golang/protobuf/ptypes/empty"
@@ -32,6 +33,7 @@ func (s *CryptoServer) Get(ctx context.Context, in *pb.CryptoId) (*pb.Crypto, er
 		Description: cryptos.Description}, nil
 }
 
+// Get all crypto stored in database
 func (s *CryptoServer) GetAll(in *empty.Empty, srv pb.Cryptos_GetAllServer) error {
 	log.Printf("Getting all cryptos...")
 
@@ -52,4 +54,16 @@ func (s *CryptoServer) GetAll(in *empty.Empty, srv pb.Cryptos_GetAllServer) erro
 		log.Printf("sending data: %v", c.Code)
 	}
 	return nil
+}
+
+// Add crypto by given name, description and code
+func (s *CryptoServer) AddCrypto(ctx context.Context, in *pb.Crypto) (*pb.CryptoId, error) {
+	log.Printf("Received crypto name: %v", in.Name)
+
+	id, err := repository.AddCrypto(model.Cryptos{Name: in.Name, Description: in.Description, Code: in.Code})
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.CryptoId{Id: id}, nil
 }

@@ -22,6 +22,7 @@ type CryptosClient interface {
 	// Geeting a crypto by id
 	Get(ctx context.Context, in *CryptoId, opts ...grpc.CallOption) (*Crypto, error)
 	GetAll(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (Cryptos_GetAllClient, error)
+	AddCrypto(ctx context.Context, in *Crypto, opts ...grpc.CallOption) (*CryptoId, error)
 }
 
 type cryptosClient struct {
@@ -73,6 +74,15 @@ func (x *cryptosGetAllClient) Recv() (*Crypto, error) {
 	return m, nil
 }
 
+func (c *cryptosClient) AddCrypto(ctx context.Context, in *Crypto, opts ...grpc.CallOption) (*CryptoId, error) {
+	out := new(CryptoId)
+	err := c.cc.Invoke(ctx, "/Crypto.Cryptos/AddCrypto", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // CryptosServer is the server API for Cryptos service.
 // All implementations must embed UnimplementedCryptosServer
 // for forward compatibility
@@ -80,6 +90,7 @@ type CryptosServer interface {
 	// Geeting a crypto by id
 	Get(context.Context, *CryptoId) (*Crypto, error)
 	GetAll(*empty.Empty, Cryptos_GetAllServer) error
+	AddCrypto(context.Context, *Crypto) (*CryptoId, error)
 	mustEmbedUnimplementedCryptosServer()
 }
 
@@ -92,6 +103,9 @@ func (UnimplementedCryptosServer) Get(context.Context, *CryptoId) (*Crypto, erro
 }
 func (UnimplementedCryptosServer) GetAll(*empty.Empty, Cryptos_GetAllServer) error {
 	return status.Errorf(codes.Unimplemented, "method GetAll not implemented")
+}
+func (UnimplementedCryptosServer) AddCrypto(context.Context, *Crypto) (*CryptoId, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AddCrypto not implemented")
 }
 func (UnimplementedCryptosServer) mustEmbedUnimplementedCryptosServer() {}
 
@@ -145,6 +159,24 @@ func (x *cryptosGetAllServer) Send(m *Crypto) error {
 	return x.ServerStream.SendMsg(m)
 }
 
+func _Cryptos_AddCrypto_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Crypto)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CryptosServer).AddCrypto(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/Crypto.Cryptos/AddCrypto",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CryptosServer).AddCrypto(ctx, req.(*Crypto))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Cryptos_ServiceDesc is the grpc.ServiceDesc for Cryptos service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -155,6 +187,10 @@ var Cryptos_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Get",
 			Handler:    _Cryptos_Get_Handler,
+		},
+		{
+			MethodName: "AddCrypto",
+			Handler:    _Cryptos_AddCrypto_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

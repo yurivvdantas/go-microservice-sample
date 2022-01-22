@@ -3,6 +3,7 @@ package repository
 import (
 	"database/sql"
 	"fmt"
+	"go-microservice-sample/configs"
 	"log"
 
 	"github.com/go-sql-driver/mysql"
@@ -11,11 +12,11 @@ import (
 func InitConnection() (*sql.DB, error) {
 
 	cfg := mysql.Config{
-		User:                 "admin", //os.Getenv("DBUSER"),
-		Passwd:               "admin", //os.Getenv("DBPASS"),
+		User:                 configs.User_database,     //os.Getenv("DBUSER"),
+		Passwd:               configs.Password_database, //os.Getenv("DBPASS"),
 		Net:                  "tcp",
-		Addr:                 "172.17.0.2:3306",
-		DBName:               "cryptos",
+		Addr:                 configs.Address_database,
+		DBName:               configs.Dbname_database,
 		AllowNativePasswords: true,
 	}
 
@@ -32,7 +33,7 @@ func InitConnection() (*sql.DB, error) {
 		log.Fatal(pingErr)
 		return nil, pingErr
 	}
-	fmt.Println("Connected!")
+	fmt.Println("Connected with database")
 
 	return conn, nil
 }

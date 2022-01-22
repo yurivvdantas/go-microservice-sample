@@ -12,7 +12,7 @@ import (
 )
 
 func main() {
-	lis, err := net.Listen("tcp", configs.Crypto_votes_service_adress)
+	lis, err := net.Listen("tcp", configs.Crypto_votes_service_address)
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
