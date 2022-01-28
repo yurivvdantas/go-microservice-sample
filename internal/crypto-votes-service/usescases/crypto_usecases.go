@@ -2,10 +2,12 @@ package usecases
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"time"
 
 	pb "go-microservice-sample/api"
+	"go-microservice-sample/internal/crypto-votes-service/cache"
 	"go-microservice-sample/internal/crypto-votes-service/model"
 	"go-microservice-sample/internal/crypto-votes-service/repository"
 
@@ -19,12 +21,28 @@ type CryptoServer struct {
 
 // Get crypto by given id
 func (s *CryptoServer) Get(ctx context.Context, in *pb.CryptoId) (*pb.Crypto, error) {
-	log.Printf("Received cryptoId: %v", in.Id)
 
-	cryptos, err := repository.FindCryptoById(in.Id)
+	log.Printf("Received cryptoId: %v", in.GetId())
+
+	cryCache := cache.GetCache(fmt.Sprintf("%d", in.GetId()))
+
+	if cryCache != nil {
+		fmt.Println("Getting crytpo from cache")
+		return &pb.Crypto{Id: cryCache.Id,
+			Name:        cryCache.Name,
+			Code:        cryCache.Code,
+			Upvote:      cryCache.Upvote,
+			Downvote:    cryCache.Downvote,
+			Description: cryCache.Description}, nil
+	}
+
+	cryptos, err := repository.FindCryptoById(in.GetId())
 	if err != nil {
 		return nil, err
 	}
+
+	cache.SetCache(fmt.Sprintf("%d", cryptos.Id), cryptos)
+	fmt.Println("Updating cache")
 
 	return &pb.Crypto{Id: cryptos.Id,
 		Name:        cryptos.Name,
@@ -73,7 +91,10 @@ func (s *CryptoServer) AddCrypto(ctx context.Context, in *pb.Crypto) (*pb.Crypto
 func (s *CryptoServer) Upvote(ctx context.Context, in *pb.CryptoId) (*empty.Empty, error) {
 	log.Printf("Received crypto id: %v", in)
 
-	crypto, err := repository.FindCryptoById(in.Id)
+	cache.Clean(fmt.Sprintf("%d", in.GetId()))
+	log.Printf("Cache clean")
+
+	crypto, err := repository.FindCryptoById(in.GetId())
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +109,7 @@ func (s *CryptoServer) LiveUpVotes(in *pb.CryptoId, srv pb.Cryptos_LiveUpVotesSe
 
 	for {
 		time.Sleep(time.Second)
-		upvotes, err := repository.FindUpVotesCryptoById(in.Id)
+		upvotes, err := repository.FindUpVotesCryptoById(in.GetId())
 		if err != nil {
 			return err
 		}
